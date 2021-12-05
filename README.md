@@ -6,7 +6,14 @@ Anotator of network traffic
 
 This utility that can be run with `sudo bash classification_utility.sh -i <network interface> -c <output csv> -p <ports csv file>` mine information from command `lsof -n -i -P` and safe them to csv file `<output csv>`.
 
-![classification utility results](data/classification_utility_results.png)
+| Application | ID_dependency                     |
+| ----------- | --------------------------------- |
+| thunderbi   | 142.251.36.78(443)-192.168.1.109  |
+| thunderbi   | 64.233.166.109(993)-192.168.1.109 |
+| teams       | 52.114.104.65(443)-192.168.1.109  |
+| slack       | 3.67.131.16(443)-192.168.1.109    |
+| slack       | 35.176.23.94(443)-192.168.1.109   |
+| GeckoMain   | 142.251.36.132(443)-192.168.1.109 |
 
 ## Firefox log file
 
