@@ -15,6 +15,8 @@ This utility that can be run with `sudo bash classification_utility.sh -i <netwo
 | slack       | 35.176.23.94(443)-192.168.1.109   |
 | GeckoMain   | 142.251.36.132(443)-192.168.1.109 |
 
+ID_dependency is in format `<ip_1>(<port>)-<ip_1>` where device with IP address `<ip_1>` provides service under port `<port>` of device with ip address `<ip_2>`.
+
 ## Firefox log file
 
 In firefox can be setted creating log file for DNS lookups by `about:networking#logging` in firefox search box. And fill the logging as like in picture:
