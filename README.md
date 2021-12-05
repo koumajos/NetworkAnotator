@@ -17,3 +17,5 @@ Then before clicking on `Start Logging` go to `DNS` and by clicking on `Clear DN
 Firefox will loggg DNS lookups to some file in folder `/tmp/` that starts with `log.txt`.
 
 Then we can mine information about network traffic from this logging file and safe it to some csv file.
+
+Test jupyter notebook for this function is `firefox_log_miner.ipynb`
