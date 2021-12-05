@@ -10,7 +10,7 @@ This utility that can be run with `sudo bash classification_utility.sh -i <netwo
 
 In firefox can be setted creating log file for DNS lookups by `about:networking#logging` in firefox search box. And fill the logging as like in picture:
 
-![firefox logs](firefox_log.png)
+![firefox logs](data/firefox_log.png)
 
 Then before clicking on `Start Logging` go to `DNS` and by clicking on `Clear DNS Cache` clear records. Then go back to `Logging` and click on `Start Logging`.
 
