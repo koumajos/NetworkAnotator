@@ -6,6 +6,8 @@ Anotator of network traffic
 
 This utility that can be run with `sudo bash classification_utility.sh -i <network interface> -c <output csv> -p <ports csv file>` mine information from command `lsof -n -i -P` and safe them to csv file `<output csv>`.
 
+![classification utility results](data/classification_utility_results.png)
+
 ## Firefox log file
 
 In firefox can be setted creating log file for DNS lookups by `about:networking#logging` in firefox search box. And fill the logging as like in picture:
