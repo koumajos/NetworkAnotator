@@ -4,7 +4,7 @@ Anotator of network traffic
 
 ## Classification utility
 
-This utility that can be run with `sudo bash classification_utility.sh -i <network interface> -c <output csv> -p <ports csv file>` mine information from command `lsof -n -i -P` and safe them to csv file `<output csv>`. Example results in `<output csv>`:
+This utility that can be run with `sudo bash classification_utility.sh -i <network interface> -c <output csv> -p <ports csv file> -d /tmp/` mine information from command `lsof -n -i -P` and safe them to csv file `<output csv>`. Example results in `<output csv>`:
 
 | Application | ID_dependency                     |
 | ----------- | --------------------------------- |
