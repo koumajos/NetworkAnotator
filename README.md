@@ -29,7 +29,9 @@ Firefox will loggg DNS lookups to some file in folder `/tmp/` that starts with `
 
 Then we can mine information about network traffic from this logging file and safe it to some csv file.
 
-Test jupyter notebook for this function is `firefox_log_miner.ipynb`, python module for bash script is `firefox_dns_miner.py`
+Test jupyter notebook for this function is `firefox_log_miner.ipynb`, python module for bash script is `firefox_dns_miner.py`.
+
+Example results in `<output csv>` with firefox dns log miner turned on:
 
 | Application                        | ID_dependency                     |
 | ---------------------------------- | --------------------------------- |
