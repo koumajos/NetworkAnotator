@@ -14,6 +14,8 @@ Help()
    echo "  -h     Print this Help."
    echo "  -i     Network interface (mandatory parameter)"
    echo "  -p     Path to CSV file with registered ports. Default Ports.csv"
+   echo "  -f     Path to Firefox log file"
+   echo "  -d     Path to folder Firefox log files"
    echo "  -c     Output CSV file. Default output.csv"
    echo
 }
@@ -32,7 +34,7 @@ PORTS="Ports.csv"
 CSV="output.csv" 
 
 # Get the options
-while getopts ":hi:p:c:" option; do
+while getopts ":hi:p:d:f:c:" option; do
    case $option in
       h) # display Help
          Help
@@ -41,6 +43,12 @@ while getopts ":hi:p:c:" option; do
          INTERFACE=$OPTARG;;
       p) # Enter csv file with registered ports
          PORTS=$OPTARG;;
+      d) # Enter csv file with registered ports
+         D=$OPTARG
+         FIREFOX="True";;
+      f) # Enter csv file with registered ports
+         F=$OPTARG
+         FIREFOX="False";;
       c) # Check for ideal -S
          CSV=$OPTARG;;
       \?) # Invalid option
@@ -72,6 +80,12 @@ tcpdump -n -i "$INTERFACE" | while read b; do
     r=$(python3 check_dependency.py -t "$b" -c "$CSV" -p "$PORTS"  2>&1)    
     if [[ $r == "False" ]]
     then
-        ./classification_utility.py -c "$CSV" -p "$PORTS"    
+        ./classification_utility.py -c "$CSV" -p "$PORTS"
+        if [[ $FIREFOX == "False" ]]
+        then
+            ./firefox_dns_miner.py -t "$b" -c "$CSV" -p "$PORTS" -f "$F"
+        else
+            ./firefox_dns_miner.py -t "$b" -c "$CSV" -p "$PORTS" -d "$D"
+        fi   
     fi
 done
