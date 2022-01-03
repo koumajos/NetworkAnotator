@@ -14,6 +14,7 @@ Help()
    echo "  -h     Print this Help."
    echo "  -i     Network interface (mandatory parameter)"
    echo "  -p     Path to CSV file with registered ports. Default Ports.csv"
+   echo "  -l     Choose chrowsers lgo files. Supported browser: Chrome, Firefox"
    echo "  -f     Path to Firefox log file"
    echo "  -d     Path to folder Firefox log files"
    echo "  -c     Output CSV file. Default output.csv"
