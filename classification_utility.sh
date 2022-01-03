@@ -20,6 +20,11 @@ Help()
    echo
 }
 
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+
 ############################################################
 ############################################################
 # Main program                                             #
@@ -32,9 +37,9 @@ Help()
 INTERFACE="None"
 PORTS="Ports.csv"
 CSV="output.csv" 
-
+SOURCE="None"
 # Get the options
-while getopts ":hi:p:d:f:c:" option; do
+while getopts ":hi:p:l:d:f:c:" option; do
    case $option in
       h) # display Help
          Help
@@ -43,49 +48,68 @@ while getopts ":hi:p:d:f:c:" option; do
          INTERFACE=$OPTARG;;
       p) # Enter csv file with registered ports
          PORTS=$OPTARG;;
+      l) # Enter name of browser to log
+         LOG=$OPTARG;;
       d) # Enter csv file with registered ports
          D=$OPTARG
-         FIREFOX="True";;
+         SOURCE="True";;
       f) # Enter csv file with registered ports
          F=$OPTARG
-         FIREFOX="False";;
-      c) # Check for ideal -S
+         SOURCE="False";;
+      c) 
          CSV=$OPTARG;;
       \?) # Invalid option
-         echo "Load arguments"
+         echo -e "${RED}Load arguments"
          echo "  Error: Invalid argument"
          echo " "
          Help
          exit;;
    esac
 done
-echo "Load arguments"
+echo -e "${GREEN}Load arguments"
 if [[ $INTERFACE == "None" ]]
 then
-    echo "  ERROR: Enter some network interface in -i"
+    echo -e "  ${RED}ERROR: Enter some network interface in -i"
     exit
 fi
 
 if test -f "$CSV"; then
-    echo "$CSV - OK"
+    echo -e "  ${GREEN}OK: $CSV"
 else
-    echo "$CSV - created"
+    echo -e "  ${YELLOW}WARNING: $CSV wasn't exists. New file $CSV was created."
     echo "Application,ID_dependency" > "$CSV"
 fi
-
-echo "  OK"
+echo -e "${NC}"
 
 tcpdump -n -i "$INTERFACE" | while read b; do
     echo $b
     r=$(python3 check_dependency.py -t "$b" -c "$CSV" -p "$PORTS"  2>&1)    
     if [[ $r == "False" ]]
     then
-        ./classification_utility.py -c "$CSV" -p "$PORTS"
-        if [[ $FIREFOX == "False" ]]
-        then
-            ./firefox_dns_miner.py -t "$b" -c "$CSV" -p "$PORTS" -f "$F"
-        else
-            ./firefox_dns_miner.py -t "$b" -c "$CSV" -p "$PORTS" -d "$D"
-        fi   
+         ./classification_utility.py -c "$CSV" -p "$PORTS"
+         if [[ $LOG == "Firefox" ]]
+         then
+            if [[ $SOURCE == "False" ]]
+            then
+                  ./firefox_dns_miner.py -t "$b" -c "$CSV" -p "$PORTS" -f "$F"
+            elif [[ $SOURCE == "True" ]] 
+            then
+                  ./firefox_dns_miner.py -t "$b" -c "$CSV" -p "$PORTS" -d "$D"
+            else
+               echo -e "  ${RED}ERROR: Firefox log file isn't placed in -f or firefox log folder isn't placed in -d"
+               exit
+            fi  
+         fi
     fi
 done
+
+if [[ $LOG == "Chrome" ]]
+then
+   if [[ $SOURCE == "False" ]]
+   then
+      ./chrome_log_miner.py -c "$CSV" -p "$PORTS" -f "$F"
+   else
+      echo -e "  ${RED}ERROR: Chrome log file isn't placed in -f"
+      exit
+   fi  
+fi 

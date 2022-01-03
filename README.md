@@ -17,6 +17,10 @@ This utility that can be run with `sudo bash classification_utility.sh -i <netwo
 
 ID_dependency is in format `<ip_1>(<port>)-<ip_1>` where device with IP address `<ip_1>` provides service under port `<port>` of device with ip address `<ip_2>`.
 
+# Log files
+
+Always stop logging in browser before you stop `classification_utility.sh`.
+
 ## Firefox log file
 
 In firefox can be setted creating log file for DNS lookups by `about:networking#logging` in firefox search box. And fill the logging as like in picture:
@@ -42,3 +46,9 @@ Example results in `<output csv>` with firefox dns log miner turned on:
 | twitter.com                        | 104.244.42.65(443)-192.168.1.109  |
 | edge-chat.facebook.com             | 157.240.30.18(443)-192.168.1.109  |
 | audio-ak-spotify-com.akamaized.net | 2.21.74.89(443)-192.168.1.109     |
+
+## Chrome log file
+
+In chrome can be setted creating log file for DNS lookups by `chrome://net-export/` in chrome search box and start log private information (locate file to safe logs). Chrome safes logs in json file, and in this log are ifnormationa bout domains and IPs.
+
+Test jupyter notebook for this function is `chrome_log_miner.ipynb`, python module for bash script is `chrome_log_miner.py`.
