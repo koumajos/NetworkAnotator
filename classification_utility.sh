@@ -80,31 +80,54 @@ else
     echo -e "  ${YELLOW}WARNING: $CSV wasn't exists. New file $CSV was created."
     echo "Application,ID_dependency" > "$CSV"
 fi
+
+if [[ $LOG == "Firefox" ]]
+then
+   if test -f "dependency_log.csv"; then
+      echo -e "  ${GREEN}OK: dependency_log.csv"
+   else
+      echo -e "  ${YELLOW}WARNING: dependency_log.csv wasn't exists. New file dependency_log.csv was created."
+      echo "ID_dependency,IP" > "dependency_log.csv"
+   fi
+fi
+
+echo "ID_dependency" > "black_list.csv"
+
 echo -e "${NC}"
+
+CNT=0
 
 tcpdump -n -i "$INTERFACE" | while read b; do
     echo $b
-    r=$(python3 check_dependency.py -t "$b" -c "$CSV" -p "$PORTS"  2>&1)    
-    if [[ $r == "False" ]]
+    if [[ $LOG == "Firefox" ]]
     then
-         ./classification_utility.py -c "$CSV" -p "$PORTS"
-         if [[ $LOG == "Firefox" ]]
+         ./dependency_log.py -t "$b" -c "dependency_log.csv" -p "$PORTS" 
+    fi    
+    CNT=$CNT+1
+    if [[ $CNT == 100 ]]
+    then
+         CNT=0
+         r=$(python3 check_dependency.py -t "$b" -c "$CSV" -p "$PORTS" -b "black_list.csv"  2>&1)
+         if [[ $r == "False" ]]
          then
-            if [[ $SOURCE == "False" ]]
-            then
-                  ./firefox_dns_miner.py -t "$b" -c "$CSV" -p "$PORTS" -f "$F"
-            elif [[ $SOURCE == "True" ]] 
-            then
-                  ./firefox_dns_miner.py -t "$b" -c "$CSV" -p "$PORTS" -d "$D"
-            else
-               echo -e "  ${RED}ERROR: Firefox log file isn't placed in -f or firefox log folder isn't placed in -d"
-               exit
-            fi  
+               ./classification_utility.py -t "$b" -c "$CSV" -p "$PORTS" -b "black_list.csv"
          fi
-    fi
+    fi    
 done
 
-if [[ $LOG == "Chrome" ]]
+if [[ $LOG == "Firefox" ]]
+then
+   if [[ $SOURCE == "False" ]]
+   then
+      ./firefox_dns_miner.py -c "$CSV" -p "$PORTS" -f "$F" -l "dependency_log.csv"
+   elif [[ $SOURCE == "True" ]] 
+   then
+      ./firefox_dns_miner.py -c "$CSV" -p "$PORTS" -d "$D" -l "dependency_log.csv"
+   else
+      echo -e "  ${RED}ERROR: Firefox log file isn't placed in -f or firefox log folder isn't placed in -d"
+      exit
+   fi
+elif [[ $LOG == "Chrome" ]]
 then
    if [[ $SOURCE == "False" ]]
    then

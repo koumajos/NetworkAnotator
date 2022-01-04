@@ -74,7 +74,7 @@ def check_port(port, ports_tb):
     return False
 
 
-def perform_row_analysis(conn, reg_ports_tb, csv_filename):
+def perform_row_analysis(conn, reg_ports_tb, csv_filename, t_dependency):
     """[summary]
 
     Args:
@@ -84,10 +84,10 @@ def perform_row_analysis(conn, reg_ports_tb, csv_filename):
     """
     items = conn.split()
     if len(items) == 0 or "*" in items[-1]:
-        return
+        return False
     status = items[-1]
     if status == "(LISTEN)":
-        return
+        return False
     application = items[0]
     dependency = items[-2]
 
@@ -99,9 +99,9 @@ def perform_row_analysis(conn, reg_ports_tb, csv_filename):
         direction = True
         sides = dependency.split("<-")
     else:
-        return
+        return False
     if len(sides) != 2:
-        return
+        return False
     # source side
     if "[" in sides[0]:
         # IPv6
@@ -125,7 +125,7 @@ def perform_row_analysis(conn, reg_ports_tb, csv_filename):
         ip_d = tmp[0]
         port_d = int(tmp[1])
     if ip_d == "127.0.0.1" and ip_s == "127.0.0.1":
-        return
+        return False
 
     tmp_port_s = check_port(port_s, reg_ports_tb)
     tmp_port_d = check_port(port_d, reg_ports_tb)
@@ -145,10 +145,13 @@ def perform_row_analysis(conn, reg_ports_tb, csv_filename):
     with open(csv_filename, "r") as f:
         existingLines = [line for line in csv.reader(f, delimiter=",")]
         if new_row in existingLines:
-            return
+            return False
     with open(csv_filename, "a") as f:
         writer = csv.writer(f)
         writer.writerow(new_row)
+    if new_row[1] == t_dependency:
+        return True
+    return False
 
 
 def parse_arguments():
@@ -165,12 +168,27 @@ def parse_arguments():
     )
 
     parser.add_argument(
+        "-t",
+        help="TCPDUMP row",
+        type=str,
+    )
+
+    parser.add_argument(
         "-c",
         "--output_csv",
         help="Output CSV for safe data. Default it's output.csv.",
         type=str,
         metavar="NAME.SUFFIX",
         default="output.csv",
+    )
+
+    parser.add_argument(
+        "-b",
+        "--black_list",
+        help="Black list CSV",
+        type=str,
+        metavar="NAME.SUFFIX",
+        default="black_list.csv",
     )
 
     parser.add_argument(
@@ -190,6 +208,41 @@ def main():
     arg = parse_arguments()
     reg_ports_tb = load_table_ports(arg.p)
 
+    tmp = arg.t.split()
+    ip_s_port_s = tmp[2]
+    ip_d_port_d = tmp[4].split(":")[0]
+
+    tmp = ip_s_port_s.split(".")
+    port_s = tmp[-1]
+    ip_s = ""
+    for i in range(len(tmp) - 1):
+        if i != len(tmp) - 2:
+            ip_s += f"{tmp[i]}."
+        else:
+            ip_s += tmp[i]
+
+    tmp = ip_d_port_d.split(".")
+    port_d = tmp[-1]
+    ip_d = ""
+    for i in range(len(tmp) - 1):
+        if i != len(tmp) - 2:
+            ip_d += f"{tmp[i]}."
+        else:
+            ip_d += tmp[i]
+
+    if len(ip_s.split(":")) > 1:
+        return
+    tmp_port_s = check_port(int(port_s), reg_ports_tb)
+    tmp_port_d = check_port(int(port_d), reg_ports_tb)
+    if tmp_port_s is True and tmp_port_d is True:
+        id_dependency = f"{ip_d}({port_d})-{ip_s}"
+    elif tmp_port_s is True:
+        id_dependency = f"{ip_s}({port_s})-{ip_d}"
+    elif tmp_port_d is True:
+        id_dependency = f"{ip_d}({port_d})-{ip_s}"
+    else:
+        id_dependency = f"{ip_s}({port_s}-{port_d})-{ip_d}"
+
     returned_text = subprocess.check_output(
         "lsof -i -n -P", shell=True, universal_newlines=True
     )
@@ -197,8 +250,21 @@ def main():
     tmp = returned_text.split("\n")
     connections = tmp[1:]
 
+    result = False
     for conn in connections:
-        perform_row_analysis(conn, reg_ports_tb, arg.output_csv)
+        tmp = perform_row_analysis(conn, reg_ports_tb, arg.output_csv, id_dependency)
+        if tmp is True:
+            result = True
+
+    if result is False:
+        new_row = [id_dependency]
+        with open(arg.black_list, "r") as f:
+            existingLines = [line for line in csv.reader(f, delimiter=",")]
+            if new_row in existingLines:
+                return
+        with open(arg.black_list, "a") as f:
+            writer = csv.writer(f)
+            writer.writerow(new_row)
 
 
 if __name__ == "__main__":

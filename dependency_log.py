@@ -1,22 +1,5 @@
 #!/usr/bin/python3
-"""
-create_time_series module:
 
-Crete time series for future analysis from IP flows/biflows.
-
-Copyright (C) 2020 CESNET
-
-LICENSE TERMS
-
-Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
-    1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
-    2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
-    3. Neither the name of the Company nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
-
-ALTERNATIVELY, provided that this notice is retained in full, this product may be distributed under the terms of the GNU General Public License (GPL) version 2 or later, in which case the provisions of the GPL apply INSTEAD OF those given above.
-
-This software is provided as is'', and any express or implied warranties, including, but not limited to, the implied warranties of merchantability and fitness for a particular purpose are disclaimed. In no event shall the company or contributors be liable for any direct, indirect, incidental, special, exemplary, or consequential damages (including, but not limited to, procurement of substitute goods or services; loss of use, data, or profits; or business interruption) however caused and on any theory of liability, whether in contract, strict liability, or tort (including negligence or otherwise) arising in any way out of the use of this software, even if advised of the possibility of such damage.
-"""
 # Standard libraries imports
 import os
 import sys
@@ -24,6 +7,8 @@ import subprocess
 import csv
 import argparse
 from argparse import RawTextHelpFormatter
+import glob
+import re
 
 
 def ports_convert_to_int(port):
@@ -104,15 +89,6 @@ def parse_arguments():
     )
 
     parser.add_argument(
-        "-b",
-        "--black_list",
-        help="Black list CSV",
-        type=str,
-        metavar="NAME.SUFFIX",
-        default="black_list.csv",
-    )
-
-    parser.add_argument(
         "-p",
         help="Set the name with suffix of file, where are safe registered ports (default: Ports.csv). File must be .csv",
         type=str,
@@ -128,8 +104,6 @@ def main():
     """Main function of the module."""
     arg = parse_arguments()
     reg_ports_tb = load_table_ports(arg.p)
-
-    # 09:37:48.817004 IP 147.32.76.118.42758 > 3.68.124.168.443: Flags [P.], seq 3734151325:3734151815, ack 1248824436, win 3631, options [nop,nop,TS val 2609698556 ecr 2924979190], length 490
 
     tmp = arg.t.split()
     ip_s_port_s = tmp[2]
@@ -153,28 +127,31 @@ def main():
         else:
             ip_d += tmp[i]
 
-    tmp_port_s = check_port(port_s, reg_ports_tb)
-    tmp_port_d = check_port(port_d, reg_ports_tb)
+    if len(ip_s.split(":")) > 1:
+        return
+    tmp_port_s = check_port(int(port_s), reg_ports_tb)
+    tmp_port_d = check_port(int(port_d), reg_ports_tb)
     if tmp_port_s is True and tmp_port_d is True:
         id_dependency = f"{ip_d}({port_d})-{ip_s}"
+        ip = ip_d
     elif tmp_port_s is True:
         id_dependency = f"{ip_s}({port_s})-{ip_d}"
+        ip = ip_s
     elif tmp_port_d is True:
         id_dependency = f"{ip_d}({port_d})-{ip_s}"
+        ip = ip_d
     else:
         id_dependency = f"{ip_s}({port_s}-{port_d})-{ip_d}"
+        ip = ip_s
 
-    with open(arg.black_list, "r") as f:
-        for line in csv.reader(f, delimiter=","):
-            if id_dependency in line[0]:
-                exit("False")
-
-    if os.path.isfile(arg.output_csv) is True:
-        with open(arg.output_csv, "r") as f:
-            for line in csv.reader(f, delimiter=","):
-                if id_dependency in line[1]:
-                    exit("True")
-    exit("False")
+    new_row = [id_dependency, ip]
+    with open(arg.output_csv, "r") as f:
+        existingLines = [line for line in csv.reader(f, delimiter=",")]
+        if new_row in existingLines:
+            return
+    with open(arg.output_csv, "a") as f:
+        writer = csv.writer(f)
+        writer.writerow(new_row)
 
 
 if __name__ == "__main__":

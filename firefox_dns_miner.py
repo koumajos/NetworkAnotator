@@ -74,12 +74,6 @@ def parse_arguments():
     )
 
     parser.add_argument(
-        "-t",
-        help="TCPDUMP row",
-        type=str,
-    )
-
-    parser.add_argument(
         "-d",
         "--dir",
         help="Directory to log files.",
@@ -107,6 +101,15 @@ def parse_arguments():
     )
 
     parser.add_argument(
+        "-l",
+        "--dependency_log",
+        help="Dependenycy log file.",
+        type=str,
+        metavar="FILE",
+        default=None,
+    )
+
+    parser.add_argument(
         "-p",
         help="Set the name with suffix of file, where are safe registered ports (default: Ports.csv). File must be .csv",
         type=str,
@@ -124,40 +127,6 @@ def main():
     if arg.dir is None and arg.file is None:
         print("Firefox log file of directory to firefox log files isn't set.")
         sys.exit(1)
-    reg_ports_tb = load_table_ports(arg.p)
-
-    tmp = arg.t.split()
-    ip_s_port_s = tmp[2]
-    ip_d_port_d = tmp[4].split(":")[0]
-
-    tmp = ip_s_port_s.split(".")
-    port_s = tmp[-1]
-    ip_s = ""
-    for i in range(len(tmp) - 1):
-        if i != len(tmp) - 2:
-            ip_s += f"{tmp[i]}."
-        else:
-            ip_s += tmp[i]
-
-    tmp = ip_d_port_d.split(".")
-    port_d = tmp[-1]
-    ip_d = ""
-    for i in range(len(tmp) - 1):
-        if i != len(tmp) - 2:
-            ip_d += f"{tmp[i]}."
-        else:
-            ip_d += tmp[i]
-
-    tmp_port_s = check_port(int(port_s), reg_ports_tb)
-    tmp_port_d = check_port(int(port_d), reg_ports_tb)
-    if tmp_port_s is True and tmp_port_d is True:
-        id_dependency = f"{ip_d}({port_d})-{ip_s}"
-    elif tmp_port_s is True:
-        id_dependency = f"{ip_s}({port_s})-{ip_d}"
-    elif tmp_port_d is True:
-        id_dependency = f"{ip_d}({port_d})-{ip_s}"
-    else:
-        id_dependency = f"{ip_s}({port_s}-{port_d})-{ip_d}"
 
     if arg.dir is not None:
         filePaths = glob.glob(os.path.join(arg.dir, "log.txt*".format("identifier")))
@@ -167,6 +136,9 @@ def main():
         else:
             filePaths = []
 
+    with open(arg.dependency_log, "r") as f:
+        ip_dependencies = [line for line in csv.reader(f, delimiter=",")]
+
     for log_file in filePaths:
         with open(log_file, "r") as f:
             text = f.read()
@@ -175,16 +147,20 @@ def main():
             if re.search("\d+\.\d+\.\d+\.\d+", text[i]):
                 s = text[i].split(" has ")
                 ip = s[-1]
-                if ip == ip_s or ip == ip_d:
-                    domain = s[-2].split(": ")[-1]
-                    new_row = [domain, id_dependency]
-                    with open(arg.output_csv, "r") as f:
-                        existingLines = [line for line in csv.reader(f, delimiter=",")]
-                        if new_row in existingLines:
-                            return
-                    with open(arg.output_csv, "a") as f:
-                        writer = csv.writer(f)
-                        writer.writerow(new_row)
+                for i in range(len(ip_dependencies)):
+                    if ip == ip_dependencies[i][1]:
+                        domain = s[-2].split(": ")[-1]
+                        new_row = [domain, ip_dependencies[i][0]]
+                        with open(arg.output_csv, "r") as f:
+                            existingLines = [
+                                line for line in csv.reader(f, delimiter=",")
+                            ]
+                            if new_row in existingLines:
+                                continue
+                        print(new_row)
+                        with open(arg.output_csv, "a") as f:
+                            writer = csv.writer(f)
+                            writer.writerow(new_row)
 
 
 if __name__ == "__main__":
